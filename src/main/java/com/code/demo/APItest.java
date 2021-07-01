@@ -16,7 +16,7 @@ public class APItest {
 //
         String str = "{\"depaId\":\"076c67f6-16b0-43ab-a205-53cc16f54d31\",\"restDate\":\"null\",\"vaccCode\":\"5601\"}";
         String str2 = "{\"depaId\":\"076c67f6-16b0-43ab-a205-53cc16f54d31\",\"restDate\":\"null\",\"vaccCode\":\"5601\"}";
-        System.out.println(Encrypts.encrypt(str));
+//        System.out.println(Encrypts.encrypt(str));
         System.out.println(Encrypts.encrypt(str2));
 //        System.out.println("===================");
 //        System.out.println(Encrypts.encrypt(s));
@@ -42,7 +42,9 @@ public class APItest {
 //        System.out.println(Encrypts.encryptHeads(Encrypts.tokenSalt(token,t)));
 
 
-        String k = "hYAPOVzzgsPD8XXKeSRfCOL0X5wPtKzxYNFuiLElxvgIiThoszhwq10DK7IxQWWfSnBAD8jVaQYCynZucjW3MIW+TIuiu9x3RZASy8qficpNB9frMC2ct/L+lc7EP76VPkNGs0Z1cRCy0Ns6oyU4WWHmWmOXKa5Ktsp80lhqpjp7NIV5NmfYee5+H5amK7aJ8y3IsujGhlhE+1jobYJdO7AAYlRNIEgsHTcb4l8jU++PIKCnY1Y5CKJUBltRx0KUwmP0TcUvBrLbXLX8eGdJez++6XduRz2xQW/hRBtGv6jX9BLdMAA3TjxJ0wJ/yGQa";
+//        String k = "hYAPOVzzgsPD8XXKeSRfCOL0X5wPtKzxYNFuiLElxvgIiThoszhwq10DK7IxQWWfSnBAD8jVaQYCynZucjW3MIW+TIuiu9x3RZASy8qficpNB9frMC2ct/L+lc7EP76VPkNGs0Z1cRCy0Ns6oyU4WWHmWmOXKa5Ktsp80lhqpjp7NIV5NmfYee5+H5amK7aJ8y3IsujGhlhE+1jobYJdO7AAYlRNIEgsHTcb4l8jU++PIKCnY1Y5CKJUBltRx0KUwmP0TcUvBrLbXLX8eGdJez++6XduRz2xQW/hRBtGv6jX9BLdMAA3TjxJ0wJ/yGQa";
+//        String k ="hYAPOVzzgsPD8XXKeSRfCOL0X5wPtKzxYNFuiLElxvgIiThoszhwq10DK7IxQWWfSnBAD8jVaQYCynZucjW3MIW+TIuiu9x3RZASy8qficpNB9frMC2ct/L+lc7EP76VPkNGs0Z1cRCy0Ns6oyU4WWHmWmOXKa5Ktsp80lhqpjp7NIV5NmfYee5+H5amK7aJ8y3IsujGhlhE+1jobYJdO7AAYlRNIEgsHTcb4l8jU+8qm45K3B23WHHGRXv6d9aIw/JjnhKupv1Yx8xubZRBjl6UpLgIHhITCpICgwj53Hz+Wc0wJ/gi5hsIunk9EvL2";
+        String k ="pJdlT7k+3syD6t8Ox1gqgheH3je+tkBA6x2TsyJ6+8wfoYGdlA+R5m6+BeuoYCsc0mQQaIfaKQyEKO4FlRP7yy1c5jGB7CXxX7KkQDZLpSGSMs3q37B9P6uybyPW1gUb";
         System.out.println(Encrypts.decrypt(k));
 
     }
@@ -53,14 +55,14 @@ public class APItest {
 
     private static void testList() throws IOException {
         String d = "076c67f6-16b0-43ab-a205-53cc16f54d31";
-        String time = "2021-06-05";
+        String time = "2021-07-02";
         String vaccCode = "5601";
         AppointmentHelp.listTheDate("上沙社康中心",d,vaccCode,vaccCode);
     }
 
     private static void testList2() throws IOException {
         String d = "076c67f6-16b0-43ab-a205-53cc16f54d31";
-        String time = "2021-06-05";
+        String time = "2021-07-02";
         String vaccCode = "5601";
         AppointmentHelp.listTheDate("上沙社康中心",d,vaccCode,vaccCode);
     }

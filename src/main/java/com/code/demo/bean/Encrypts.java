@@ -14,32 +14,15 @@ public class Encrypts {
     private static final long[] u = new long[]{462357, 472066609, 943670861, 1415275113, 1886879365, 2358483617L, 2830087869L, 3301692121L, 3773296373L, 4228057617L, 404694573, 876298825, 1347903077, 1819507329, 2291111581L, 2762715833L, 3234320085L, 3705924337L, 4177462797L, 337322537, 808926789, 1280531041, 1752135293, 2223739545L, 2695343797L, 3166948049L, 3638552301L, 4110090761L, 269950501, 741554753, 1213159005, 1684763257};
     private static final long[] a = new long[]{2746333894L, 1453994832L, 1736282519, 2993693404L};
 
-    private static final byte[] iv = "4h0VXhpqwWy89xBk".getBytes();
+    private static final byte[] encrypt_iv = "4h0VXhpqwWy89xBk".getBytes();
+    private static final byte[] decrypt_iv = "u1r8jNhz07N7Zkn0".getBytes();
     private static final byte[] decrypt_key = "d!6@7#C$Y%p&k*4Q".getBytes();
     //参数加密的key
     private static final byte[] params_key = "0~6@h#Y^k%O&1*jM".getBytes();
     //请求头中的otn和ybm生成的key
     private static final byte[] head_key = "1~z@o#K^K%p&u*IT".getBytes();
     private static byte[] key = null;
-
-    public static void main(String[] args) {
-//        System.out.println("sdfsdfsdf".contains(""));
-//        Resp<UserInfoBean> userInfo = AppointmentHelp.getUserInfo();
-//        System.out.println(userInfo);
-//        sendMsg();
-        String msg = "0~6@h#Y^k%O&1*jM";
-        System.out.println(Arrays.toString(msg.getBytes()));
-        //{"pageNum":1,"numPerPage":10,"areaCode":"440306","bactCode":"5601","outpName":"","outpMapLongitude":"","outpMapLatitude":"","corpCode":""}
-        String json = "{\"pageNum\":1,\"numPerPage\":10,\"areaCode\":\"440306\",\"bactCode\":\"5601\",\"outpName\":\"\",\"outpMapLongitude\":\"\",\"outpMapLatitude\":\"\",\"corpCode\":\"\"}";
-        System.out.println(Arrays.toString(json.getBytes()));
-
-        padding(json);
-
-        System.out.println("===iv==" + Arrays.toString(iv));
-        System.out.println("===key==" + Arrays.toString(key));
-
-        System.out.println(encrypt(json));
-    }
+    private static byte[] iv = null;
 
     private static byte[] padding(String str) {
         int t = 16 - str.length() % 16;
@@ -53,7 +36,7 @@ public class Encrypts {
     private static byte[] dePadding(byte[] b) {
         if (null == b)
             return null;
-        int t = b[b.length - 1];
+        int t = b[b.length - 1] & 0xff;
         byte[] temp = new byte[b.length - t];
         System.arraycopy(b,0,temp,0,temp.length);
         return temp;
@@ -80,10 +63,11 @@ public class Encrypts {
         if (params == null) return null;
         choseKeyWithType(type);
         byte[] bytes = params.getBytes();
-        PrintUtils.println("bytes length=%s====bytes=%s",bytes.length,Arrays.toString(bytes));
+//        PrintUtils.println("bytes length=%s====bytes=%s",bytes.length,Arrays.toString(bytes));
         byte[] padding = padding(params);
         int index = padding.length / 16;
         byte[] i = new byte[padding.length];
+        int[] encryptKeys = encryptRoundKeys();
         if (mode.equals("cbc")) {
             int[] o = uint8ToUint32Block(iv);
             for (int u = 0; u < index; u++) {
@@ -93,7 +77,7 @@ public class Encrypts {
                 o[1] = o[1] ^ s[1];
                 o[2] = o[2] ^ s[2];
                 o[3] = o[3] ^ s[3];
-                int[] f = doBlockCrypt(o, encryptRoundKeys());
+                int[] f = doBlockCrypt(o, encryptKeys);
                 o = f;
                 for (int c = 0; c < 16; c++)
                     i[a + c] = (byte) (f[(c / 4)] >> (3 - c) % 4 * 8 & 255);
@@ -106,29 +90,26 @@ public class Encrypts {
         if (params == null) return null;
         choseKeyWithType(type);
         byte[] bytes = Base64.getDecoder().decode(params);
-        PrintUtils.println("=decrypt=====bytes.length=%s    ==bytes=%s",bytes.length,Arrays.toString(bytes));
+//        PrintUtils.println("=decrypt=====bytes.length=%s    ==bytes=%s\n  iv=%s length=%s  key=%s  key length=%s",
+//                bytes.length,Arrays.toString(bytes),Arrays.toString(iv),iv.length,Arrays.toString(key),key.length);
 
         byte[] n = new byte[bytes.length];
         int index = bytes.length / 16;
-        if (mode.equals("cbc")) {
-            int[] i = uint8ToUint32Block(iv);
-            for (int o = 0; o < index; o++) {
-                int u = 16 * o;
-                int[] a = uint8ToUint32Block(bytes, u);
-                int[] s = doBlockCrypt(a, decryptRoundKeys());
-                int[] f = new int[4];
+        int[] decryptKeys = decryptRoundKeys();
 
-
-                f[0] = i[0] ^ s[0];
-                f[1] = i[1] ^ s[1];
-                f[2] = i[2] ^ s[2];
-                f[3] = i[3] ^ s[3];
-                i = a;
-
-                for (int c = 0; c < 16; c++){
-                    n[u + c] = (byte) (f[(c / 4)] >> (3 - c) % 4 * 8 & 255);
-                }
-            }
+        int[] i = uint8ToUint32Block(iv);
+        for (int o = 0; o < index; o++) {
+            int u = 16 * o;
+            int[] a = uint8ToUint32Block(bytes, u);
+            int[] s = doBlockCrypt(a, decryptKeys);
+            int[] f = new int[4];
+            f[0] = i[0] ^ s[0];
+            f[1] = i[1] ^ s[1];
+            f[2] = i[2] ^ s[2];
+            f[3] = i[3] ^ s[3];
+            i = a;
+            for (int c = 0; c < 16; c++)
+                n[u + c] = (byte) (f[(c / 4)] >> (3 - c) % 4 * 8 & 255);
         }
         byte[] v = dePadding(n);
         return new String(v);
@@ -137,10 +118,13 @@ public class Encrypts {
     private static void choseKeyWithType(EncryptType type) {
         if (type == EncryptType.PARAMS){
             key = params_key;
+            iv = encrypt_iv;
         }else if (type == EncryptType.HEAD){
             key = head_key;
+            iv = encrypt_iv;
         }else if (type == EncryptType.DECRYPT){
             key = decrypt_key;
+            iv = decrypt_iv;
         }
     }
 
@@ -172,6 +156,10 @@ public class Encrypts {
     }
 
     private static int[] encryptRoundKeys() {
+        return spawnEncryptRoundKeys();
+    }
+
+    private static int[] spawnEncryptRoundKeys() {
         int[] encryptRoundKeys = new int[32];
         int[] e = new int[4];
         int[] t = new int[36];
@@ -191,7 +179,6 @@ public class Encrypts {
             encryptRoundKeys[r] = t[r + 4];
         }
 
-        PrintUtils.println("===encryptRoundKeys=length=%s=     array=%s",encryptRoundKeys.length,Arrays.toString(encryptRoundKeys));
         return encryptRoundKeys;
     }
 

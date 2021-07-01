@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +69,7 @@ public class AppointmentHelp {
                         int holidaySkip = data.getOutHolidaySkip();
                         boolean isUpdate = holidaySkip == Constant.WORKING;
                         String corpName = data.getCorpName();
-                        println("当前接种点:%s      疫苗公司:%s   更新时间:%s   ", data.getOutpName(), corpName == null ? "未公布" : corpName, isUpdate ? data.getOutpUpdatedTime() : "未放号");
+                        println("当前接种点:%s  疫苗公司:%s  更新时间:%s ", data.getOutpName(), corpName == null ? "未公布" : corpName, isUpdate ? data.getOutpUpdatedTime() : "未放号");
                         if (data.getStatus() == Constant.CAN_ORDER && isUpdate) {
                             String outpName = data.getOutpName();
                             println("%s有号啦,快速去查看！", outpName);
@@ -79,7 +81,9 @@ public class AppointmentHelp {
 //                                listTheDate(data.getDepaId(), "5601", corpCode);
 //                            }
 
-                            listTheDate(outpName,data.getDepaId(), "5601", corpCode);
+                            if (nameFilter(outpName)){
+                                listTheDate(outpName,data.getDepaId(), "5601", corpCode);
+                            }
                         }
                     }
 
@@ -94,11 +98,14 @@ public class AppointmentHelp {
         params.put("areaCode", "440306");
         params.put("corpCode", "");
         params.put("outpName", "");
-        params.put("outpMapLongitude", "");
-        params.put("outpMapLatitude", "");
-        params.put("bactCode", "5601");//新冠疫苗代码
+        params.put("needleTimes", "1");
+//        params.put("outpMapLongitude", "");
+//        params.put("outpMapLatitude", "");
+//        params.put("bactCode", "5601");//新冠疫苗代码
+        params.put("bactCode", "");//新冠疫苗代码
+        params.put("vaccCustomCode", "");
         params.put("pageNum", "1");
-        params.put("numPerPage", "30");
+        params.put("numPerPage", "10");
 
         RequestBody formBody = new FormBody.Builder()
                 .add("params", getEncryptParams(params))
@@ -171,13 +178,13 @@ public class AppointmentHelp {
     public static void listTheDate(String outpName ,String depaId, String vaccCode, String corpCode) throws IOException {
 //		String url = "https://xgsz.szcdc.net/crmobile/reservationStock/list?depaId=97F00C04-E85B-9BAE-2277-E2B06E7B4E39&restDate=null&vaccCode=5601";
         Map<String,String> params = ParamsUtils.getParamsMap();
-        params.put("vaccCode",vaccCode);
-        params.put("restDate","null");
+//        params.put("vaccCode",vaccCode);
+//        params.put("restDate","null");
         params.put("depaId",depaId);
-        String url = String.format("https://xgsz.szcdc.net/crmobile/reservationStock/list?params=%s", getEncryptParams(params));
+        String url = String.format("https://xgsz.szcdc.net/crmobile/reservationStock/list?params=%s", encode(getEncryptParams(params)));
         TypeToken<Resp<List<RestStatus>>> token = new TypeToken<Resp<List<RestStatus>>>() {};
         Resp<List<RestStatus>> resp = getRequest(url, token);
-        println("=listTheDate===%s",resp);
+//        println("=listTheDate===%s",resp);
         if (resp != null && resp.getEcode() == Constant.ERROR_SUCCEED) {
             String restDate = resp.getData().get(0).getRestDate();
             restDate = restDate.substring(0, restDate.indexOf(" "));
@@ -193,7 +200,7 @@ public class AppointmentHelp {
     private static String getEncryptParams(Map<String, String> params) {
         String json = new Gson().toJson(params);
         String p = Encrypts.encrypt(json);
-        println("====params=%s\nencrypt=%s=",json,p);
+//        println("====params=%s\nencrypt=%s=",json,p);
 //        return Encrypts.encrypt(new Gson().toJson(params));
         return p;
     }
@@ -234,10 +241,10 @@ public class AppointmentHelp {
         params.put("date",orderDate);
         params.put("vaccCode",vaccCode);
 
-        String url = String.format("https://xgsz.szcdc.net/crmobile/reservationStock/timeNumber?params=%s",getEncryptParams(params));
+        String url = String.format("https://xgsz.szcdc.net/crmobile/reservationStock/timeNumber?params=%s",encode(getEncryptParams(params)));
         TypeToken<Resp<List<TimeOrder>>> token = new TypeToken<Resp<List<TimeOrder>>>() {};
         Resp<List<TimeOrder>> resp = getRequest(url, token);
-        println("=listOrderTime===%s",resp);
+//        println("=listOrderTime===%s",resp);
         if (resp == null) {
             System.out.println("请求出错，请查看代码");
             return;
@@ -264,6 +271,11 @@ public class AppointmentHelp {
     //增加筛选规则
     private static boolean preference(String outpName,String corpCode,String time) {
         if (!Config.isOpen) return true;
+        boolean nameFilter = nameFilter(outpName);
+        return nameFilter && (corpCode.equals(Config.PREFER_VACCINE_CODE_FIRST) || corpCode.equals(Config.PREFER_VACCINE_CODE_SECOND)) && time.contains(Config.PREFER_TIME);
+    }
+
+    private static boolean nameFilter(String outpName) {
         String[] name = Config.PREFER_PLACE.split(",");
         boolean nameFilter = false;
         for (String s:name){
@@ -272,7 +284,7 @@ public class AppointmentHelp {
                 break;
             }
         }
-        return nameFilter && (corpCode.equals(Config.PREFER_VACCINE_CODE_FIRST) || corpCode.equals(Config.PREFER_VACCINE_CODE_SECOND)) && time.contains(Config.PREFER_TIME);
+        return nameFilter;
     }
 
     /**
@@ -371,5 +383,14 @@ public class AppointmentHelp {
         String url = String.format("https://xgsz.szcdc.net/crmobile/reservation/saveAppointment");
     }
 
+
+    private static String encode(String content){
+        try {
+            return URLEncoder.encode(content, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
 
 }
